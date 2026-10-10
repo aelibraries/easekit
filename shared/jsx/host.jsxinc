@@ -1,0 +1,47 @@
+// Shared host helpers for the CEP panels. Each panel's host.jsx includes this.
+//@include "json.jsxinc"
+
+// Wraps a host function so the panel always gets JSON back: the result, or { error } with a readable message.
+// Messages thrown as aelibsSoft(...) are expected situations ("select some layers") rather than failures.
+function aelibsExpose(ns, name, fn, undo) {
+  ns[name] = function (arg) {
+    var opened = false;
+    try {
+      if (undo) { app.beginUndoGroup(undo); opened = true; }
+      return JSON.stringify(fn(arg));
+    } catch (e) {
+      var soft = false;
+      try { soft = !!e.soft; } catch (x) {}
+      return JSON.stringify({ error: aelibsErrorText(e), soft: soft });
+    } finally {
+      if (opened) app.endUndoGroup();
+    }
+  };
+}
+
+// Some errors After Effects throws can't be turned into a string with + or String(): doing so throws a new,
+// uncatchable "Object of type Error found where a Number, Array, or Property is needed". Every error that
+// gets reported goes through here instead.
+function aelibsErrorText(e) {
+  var m = '', line = '';
+  try { m = typeof e.message === 'string' ? e.message : ''; } catch (x) {}
+  if (!m) { try { m = typeof e === 'string' ? e : e.toString(); } catch (x2) { m = ''; } }
+  try { if (typeof e.line === 'number' && e.line > 0) line = ' (line ' + e.line + ')'; } catch (x3) {}
+  return (m || 'After Effects reported an error') + line;
+}
+
+function aelibsSoft(message) { var e = new Error(message); e.soft = true; return e; }
+
+// The comp the user is working in. After Effects drops activeItem when focus moves to another panel
+// (the Project panel, a docked extension), so the last comp seen is remembered and used while it exists.
+function aelibsComp(quiet) {
+  var c = app.project && app.project.activeItem;
+  if (c && c instanceof CompItem) { $.global.aelibsLastComp = c.id; return c; }
+  var id = $.global.aelibsLastComp;
+  if (id) {
+    try { c = app.project.itemByID(id); } catch (e) { c = null; }
+    if (c && c instanceof CompItem) return c;
+  }
+  if (quiet) return null;
+  throw aelibsSoft('Open a composition first.');
+}

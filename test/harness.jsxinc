@@ -1,0 +1,51 @@
+// Tiny assertion kit for tests that run inside After Effects (see run.mjs).
+var T = { out: [], fails: 0 };
+// Every result is also appended to a progress file, so a run that After Effects stops dead still shows
+// where it got to.
+T.progress = function (line) {
+  if (!$.global.T_PROGRESS) return;
+  var f = new File($.global.T_PROGRESS);
+  f.encoding = 'UTF-8'; f.open('a'); f.writeln(line); f.close();
+};
+T.ok = function (name, cond, info) {
+  var line = (cond ? 'PASS ' : 'FAIL ') + name + (cond || info === undefined ? '' : ' - ' + info);
+  T.out.push(line);
+  T.progress(line);
+  if (!cond) T.fails++;
+};
+// Runs a block of checks; an error inside fails that block and the rest of the file still runs.
+T.step = function (name, fn) {
+  T.progress('...  ' + name);
+  try { fn(); } catch (e) { T.ok(name, false, 'threw: ' + aelibsErrorText(e)); }
+};
+T.near = function (name, got, want, tol) {
+  tol = tol === undefined ? 1e-3 : tol;
+  T.ok(name, Math.abs(got - want) <= tol, 'got ' + got + ', want ' + want);
+};
+T.eq = function (name, got, want) { T.ok(name, got === want, 'got ' + got + ', want ' + want); };
+T.log = function (s) { T.out.push('     ' + s); };
+// Calls an exposed host function the way the panel does: one JSON argument in, JSON out.
+T.call = function (fn, arg) { return JSON.parse(fn(arg)); };
+T.comp = function () {
+  var c = app.project.items.addComp('test', 1920, 1080, 1, 10, 30);
+  c.openInViewer();
+  return c;
+};
+// Selecting a property selects all its keys, so the property goes first and the keys after.
+T.select = function (p, keys) {
+  p.selected = true;
+  for (var i = 1; i <= p.numKeys; i++) p.setSelectedAtKey(i, false);
+  for (i = 0; i < keys.length; i++) p.setSelectedAtKey(keys[i], true);
+};
+T.deselectAll = function (comp) {
+  for (var i = 1; i <= comp.numLayers; i++) comp.layer(i).selected = false;
+  var s = comp.selectedProperties;
+  for (i = 0; i < s.length; i++) try { s[i].selected = false; } catch (e) {}
+};
+// Reference cubic-bezier, same as the panel's.
+T.ease = function (v, x) {
+  var bez = function (p1, p2, u) { return 3 * (1 - u) * (1 - u) * u * p1 + 3 * (1 - u) * u * u * p2 + u * u * u; };
+  var lo = 0, hi = 1, u = x;
+  for (var i = 0; i < 30; i++) { u = (lo + hi) / 2; if (bez(v[0], v[2], u) < x) lo = u; else hi = u; }
+  return bez(v[1], v[3], u);
+};

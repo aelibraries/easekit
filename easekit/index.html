@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Easekit</title>
+<link rel="stylesheet" href="shared/aelibs.css">
+<link rel="stylesheet" href="easekit.css">
+</head>
+<body>
+<div class="app">
+  <header id="hd"></header>
+
+  <main class="body" id="body">
+    <section class="editor">
+      <div class="graph" id="graph">
+        <svg id="g" aria-label="Curve editor. Drag the two handles; hold Shift to snap."></svg>
+        <div class="graph__tools">
+          <button class="iconbtn iconbtn--sm" type="button" id="read" title="Read the ease of the selected keyframes"></button>
+          <button class="iconbtn iconbtn--sm" type="button" id="mirror" title="Mirror: turn an ease-out into an ease-in"></button>
+          <button class="iconbtn iconbtn--sm" type="button" id="reset" title="Reset to linear"></button>
+        </div>
+      </div>
+      <div class="readout">
+        <div class="field field--mono" id="css-field"><input id="css" spellcheck="false" autocomplete="off" aria-label="Curve as cubic-bezier values"></div>
+        <button class="iconbtn" type="button" id="copy" title="Copy"></button>
+      </div>
+      <div class="rail" id="rail" aria-hidden="true"><span class="rail__span" id="span"></span><i class="rail__tick" id="tick0"></i><i class="rail__tick" id="tick1"></i><span class="rail__dots" id="dots"></span><i class="rail__box" id="box"></i></div>
+    </section>
+
+    <section class="lib">
+      <div class="lib__hd">
+        <span class="lbl">Library <span class="lib__n" id="lib-n"></span></span>
+        <span class="inline">
+          <button class="iconbtn iconbtn--sm" type="button" id="save" title="Save this curve to the library"></button>
+          <button class="iconbtn iconbtn--sm" type="button" id="lib-more" title="Library options"></button>
+        </span>
+      </div>
+      <div class="lib__filter hidden" id="filter-wrap"><div class="field"><input id="filter" placeholder="Filter" spellcheck="false" autocomplete="off"></div></div>
+      <ul class="list" id="lib" role="listbox" tabindex="0" aria-label="Saved curves"></ul>
+    </section>
+  </main>
+
+  <footer class="bar">
+    <div class="seg" id="side" title="Which side of each keyframe to ease">
+      <button type="button" data-v="both" title="Both sides">Both</button>
+      <button type="button" data-v="out" title="Outgoing side only (first handle)">Out</button>
+      <button type="button" data-v="in" title="Incoming side only (second handle)">In</button>
+    </div>
+    <button class="btn btn--pri grow" type="button" id="apply">Apply</button>
+  </footer>
+</div>
+<input type="file" id="file-in" accept=".json,application/json" class="hidden">
+<script src="shared/aelibs.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

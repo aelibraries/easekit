@@ -1,0 +1,8 @@
+{
+  "slug": "easekit",
+  "name": "Easekit",
+  "kind": "cep",
+  "version": "1.0.0",
+  "bundleId": "com.aelibs.easekit",
+  "accent": "#8b74ff"
+}

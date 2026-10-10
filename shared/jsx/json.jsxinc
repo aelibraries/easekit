@@ -1,0 +1,41 @@
+// Minimal JSON for ExtendScript, which has no JSON object (checked in After Effects 2024).
+// stringify handles what the panels exchange: objects, arrays, strings, finite numbers, booleans, null.
+if (typeof JSON !== 'object') JSON = {};
+(function () {
+  if (typeof JSON.stringify !== 'function') {
+    var esc = function (s) {
+      return '"' + s.replace(new RegExp('[\\\\"\x00-\x1f' + String.fromCharCode(0x2028, 0x2029) + ']', 'g'), function (c) {
+        var m = { '"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t' };
+        return m[c] || '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4);
+      }) + '"';
+    };
+    var str = function (v) {
+      if (v === null || v === undefined) return 'null';
+      var t = typeof v;
+      if (t === 'string') return esc(v);
+      if (t === 'number') return isFinite(v) ? String(v) : 'null';
+      if (t === 'boolean') return String(v);
+      if (t === 'function') return 'null';
+      if (v instanceof Array) {
+        var a = [];
+        for (var i = 0; i < v.length; i++) a.push(str(v[i]));
+        return '[' + a.join(',') + ']';
+      }
+      var o = [];
+      for (var k in v) if (v.hasOwnProperty(k) && typeof v[k] !== 'function' && v[k] !== undefined) o.push(esc(k) + ':' + str(v[k]));
+      return '{' + o.join(',') + '}';
+    };
+    JSON.stringify = function (v) { return str(v); };
+  }
+  if (typeof JSON.parse !== 'function') {
+    // Only ever fed JSON we produced ourselves (settings, presets, GitHub API answers); still, refuse
+    // anything that isn't plain JSON before evaluating it.
+    JSON.parse = function (s) {
+      var t = String(s).replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
+        .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
+        .replace(/(?:^|:|,)(?:\s*\[)+/g, '');
+      if (!/^[\],:{}\s]*$/.test(t)) throw new SyntaxError('JSON.parse');
+      return eval('(' + s + ')');
+    };
+  }
+})();
